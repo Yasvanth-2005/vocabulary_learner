@@ -39,16 +39,23 @@ npm install
 npm run dev
 ```
 
-The React app runs at **http://localhost:5173** and proxies `/api` requests to the backend.
+The React app runs at **http://localhost:5173**.
 
-Frontend environment variables (in `frontend/.env`):
+### Frontend environment
+
+Create `frontend/.env` (or set the variable in your hosting provider's build settings):
+
+```
+VITE_API_BASE_URL=http://localhost:5000/api
+```
 
 | Variable | Description |
 |----------|-------------|
-| `VITE_API_BASE_URL` | API path the browser calls (default `/api` for local proxy) |
-| `VITE_DEV_PROXY_TARGET` | Backend origin for the Vite dev proxy (default `http://localhost:5000`) |
+| `VITE_API_BASE_URL` | Full backend API URL including `/api` (defaults to `http://localhost:5000/api`) |
 
-For production builds, set `VITE_API_BASE_URL` to your hosted API URL (e.g. `https://your-api.onrender.com/api`) in `frontend/.env.production` or your hosting provider's build settings.
+**Local dev:** omit the variable or point it at `http://localhost:5000/api`.
+
+**Production (e.g. Vercel):** set `VITE_API_BASE_URL` to your hosted backend, e.g. `https://your-api.onrender.com/api`. Vite bakes this in at build time, so add it in your host's environment variables and redeploy.
 
 ## Usage
 
