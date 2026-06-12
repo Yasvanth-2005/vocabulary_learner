@@ -1,0 +1,53 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Manrope', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --color-primary: #2d5a43;
+  --color-primary-hover: #234a36;
+  --color-secondary: #86a789;
+  --color-tertiary: #ebf3ee;
+  --color-neutral: #faf9f6;
+  --color-ink: #1f2933;
+  --color-ink-muted: #5f6b7a;
+  --color-card: #ffffff;
+  --color-border: #e2e8e4;
+  --color-warn: #bc4749;
+  --color-warn-soft: #fce8e8;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  background: var(--color-neutral);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+@utility font-mono {
+  font-family: var(--font-mono);
+}
+
+@utility rounded-input {
+  border-radius: 10px;
+}
+
+@utility skeleton {
+  background-color: var(--color-tertiary);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
