@@ -1,27 +1,28 @@
 import { useState } from 'react';
 import { useDevMode } from '../context/DevModeContext';
-import { formatPartOfSpeech, getIntervalLabels } from '../utils/review';
+import { formatPartOfSpeech, getDisplayExample, getIntervalLabels } from '../utils/review';
 import { ReviewCardSkeleton } from './Skeleton';
 
-function ExampleSentence({ example, word }) {
-  if (!example) return null;
-
+function ExampleSentence({ text, word }) {
   const regex = new RegExp(`(${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-  const parts = example.split(regex);
+  const parts = text.split(regex);
 
   return (
-    <div className="mx-auto mt-5 max-w-md rounded-xl bg-[var(--color-neutral)] px-4 py-3 text-sm italic text-[var(--color-ink-muted)]">
-      &ldquo;
-      {parts.map((part, i) =>
-        part.toLowerCase() === word.toLowerCase() ? (
-          <strong key={i} className="font-semibold text-[var(--color-ink)] not-italic">
-            {part}
-          </strong>
-        ) : (
-          part
-        )
-      )}
-      &rdquo;
+    <div className="mx-auto mt-5 max-w-md text-left">
+      <p className="text-xs font-semibold text-[var(--color-ink)]">Example:-</p>
+      <div className="mt-1.5 rounded-xl bg-[var(--color-neutral)] px-4 py-3 text-sm italic text-[var(--color-ink-muted)]">
+        &ldquo;
+        {parts.map((part, i) =>
+          part.toLowerCase() === word.toLowerCase() ? (
+            <strong key={i} className="font-semibold text-[var(--color-ink)] not-italic">
+              {part}
+            </strong>
+          ) : (
+            part
+          )
+        )}
+        &rdquo;
+      </div>
     </div>
   );
 }
@@ -153,11 +154,17 @@ export default function ReviewMode({
 
             <div className="mx-auto mt-5 h-px w-12 bg-[var(--color-border)]" />
 
-            <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-[var(--color-ink)]">
-              {current.definition}
-            </p>
+            <div className="mx-auto mt-5 max-w-md text-left">
+              <p className="text-xs font-semibold text-[var(--color-ink)]">Definition:-</p>
+              <p className="mt-1.5 text-base leading-relaxed text-[var(--color-ink-muted)]">
+                {current.definition || 'No definition available.'}
+              </p>
+            </div>
 
-            <ExampleSentence example={current.example} word={current.word} />
+            <ExampleSentence
+              text={getDisplayExample(current.word, current.definition, current.example)}
+              word={current.word}
+            />
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-3">

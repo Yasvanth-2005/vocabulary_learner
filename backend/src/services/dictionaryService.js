@@ -26,6 +26,31 @@ class DictionaryService {
     return this.parseEntry(data[0], normalized);
   }
 
+  findExample(entry) {
+    for (const meaning of entry.meanings || []) {
+      for (const def of meaning.definitions || []) {
+        if (def.example?.trim()) {
+          return def.example.trim();
+        }
+      }
+    }
+    return '';
+  }
+
+  buildFallbackExample(word, definition, partOfSpeech) {
+    const clean = definition.replace(/\.$/, '').toLowerCase();
+    if (partOfSpeech === 'adjective') {
+      return `The situation was ${word} — ${clean}.`;
+    }
+    if (partOfSpeech === 'verb') {
+      return `She learned how to ${word} in practice.`;
+    }
+    if (partOfSpeech === 'noun') {
+      return `The ${word} was discussed in today's lesson.`;
+    }
+    return `The word "${word}" means ${clean}.`;
+  }
+
   parseEntry(entry, normalizedWord) {
     const meaning = entry.meanings?.[0];
     const definition = meaning?.definitions?.[0]?.definition;
@@ -34,17 +59,15 @@ class DictionaryService {
       throw new DictionaryError(`No definition found for "${normalizedWord}".`, 404);
     }
 
+    const partOfSpeech = meaning?.partOfSpeech || '';
     const example =
-      meaning.definitions.find((d) => d.example)?.example ||
-      meaning.definitions[0]?.example ||
-      '';
+      this.findExample(entry) ||
+      this.buildFallbackExample(normalizedWord, definition, partOfSpeech);
 
     const phonetic =
       entry.phonetic ||
       entry.phonetics?.find((p) => p.text)?.text ||
       '';
-
-    const partOfSpeech = meaning?.partOfSpeech || '';
 
     return {
       word: normalizedWord,

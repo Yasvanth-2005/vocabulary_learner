@@ -34,6 +34,17 @@ export function formatNextReviewLabel(nextReviewAt, devMode) {
   };
 }
 
+export function getDisplayExample(word, definition, example) {
+  if (example?.trim()) {
+    return example.trim();
+  }
+  if (!definition) {
+    return `Try using "${word}" in a sentence.`;
+  }
+  const clean = definition.replace(/\.$/, '').toLowerCase();
+  return `The word "${word}" means ${clean}.`;
+}
+
 export function formatPartOfSpeech(partOfSpeech) {
   if (!partOfSpeech) return '';
   return partOfSpeech.replace(/_/g, ' ').toUpperCase();
