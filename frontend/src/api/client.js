@@ -9,7 +9,7 @@ function getHeaders(devMode) {
 }
 
 async function request(path, options = {}, devMode = false) {
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(`${}${path}`, {
     ...options,
     headers: {
       ...getHeaders(devMode),
