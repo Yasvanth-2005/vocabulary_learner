@@ -1,4 +1,4 @@
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 function getHeaders(devMode) {
   const headers = { 'Content-Type': 'application/json' };
@@ -9,7 +9,7 @@ function getHeaders(devMode) {
 }
 
 async function request(path, options = {}, devMode = false) {
-  const response = await fetch(`${}${path}`, {
+  const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
       ...getHeaders(devMode),
