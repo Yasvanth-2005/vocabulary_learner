@@ -15,7 +15,9 @@ function AppContent() {
   const { devMode } = useDevMode();
   const tab = useSelector((state) => state.ui.tab);
   const toast = useSelector((state) => state.ui.toast);
-  const { dueWords, dueCount, loadingDue, submitting } = useSelector((state) => state.review);
+  const { dueWords, dueCount, loadingDue, dueError, submitting } = useSelector(
+    (state) => state.review
+  );
   const { reloadKey, adding } = useSelector((state) => state.library);
 
   useEffect(() => {
@@ -120,6 +122,7 @@ function AppContent() {
               dueWords={dueWords}
               dueCount={dueCount}
               loading={loadingDue}
+              error={dueError}
               submitting={submitting}
               onReview={handleReview}
               onRefresh={handleRefreshDue}

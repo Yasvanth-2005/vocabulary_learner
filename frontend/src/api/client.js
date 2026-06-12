@@ -8,14 +8,31 @@ function getHeaders(devMode) {
   return headers;
 }
 
+function toRequestError(err) {
+  if (err instanceof TypeError || err?.message === 'Failed to fetch') {
+    const offline = typeof navigator !== 'undefined' && !navigator.onLine;
+    return new Error(
+      offline
+        ? 'No internet connection. Check your network and try again.'
+        : 'Could not reach the server. Check your connection and try again.'
+    );
+  }
+  return err instanceof Error ? err : new Error('Something went wrong.');
+}
+
 async function request(path, options = {}, devMode = false) {
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      ...getHeaders(devMode),
-      ...options.headers,
-    },
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers: {
+        ...getHeaders(devMode),
+        ...options.headers,
+      },
+    });
+  } catch (err) {
+    throw toRequestError(err);
+  }
 
   const data = await response.json().catch(() => ({}));
 

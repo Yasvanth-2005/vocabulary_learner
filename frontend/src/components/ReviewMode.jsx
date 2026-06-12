@@ -46,6 +46,7 @@ export default function ReviewMode({
   dueWords,
   dueCount,
   loading,
+  error,
   submitting,
   onReview,
   onRefresh,
@@ -60,11 +61,27 @@ export default function ReviewMode({
     setRevealed(false);
   }
 
-  if (dueCount === 0 || !current) {
-    if (loading) {
-      return <ReviewCardSkeleton />;
-    }
+  if (loading) {
+    return <ReviewCardSkeleton />;
+  }
 
+  if (error) {
+    return (
+      <div className="flex min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--color-warn)]/40 bg-[var(--color-warn-soft)]/40 px-6 text-center">
+        <p className="text-lg font-bold text-[var(--color-ink)]">Could not load reviews</p>
+        <p className="mt-2 max-w-sm text-sm text-[var(--color-ink-muted)]">{error}</p>
+        <button
+          type="button"
+          onClick={onRefresh}
+          className="mt-4 rounded-full bg-[var(--color-primary)] px-5 py-2 text-sm font-semibold text-white hover:bg-[var(--color-primary-hover)]"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
+
+  if (dueCount === 0 || !current) {
     return (
       <div className="flex min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-card)]/60 px-6 text-center">
         <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-tertiary)] text-xl text-[var(--color-primary)]">
@@ -88,13 +105,9 @@ export default function ReviewMode({
   const pos = formatPartOfSpeech(current.partOfSpeech);
   const intervals = getIntervalLabels(devMode);
 
-  if (loading) {
-    return <ReviewCardSkeleton />;
-  }
-
   return (
     <div>
-      <div className="mb-3 flex min-h-5 items-center justify-between px-1">
+      <div className="mb-3 flex items-center justify-between px-1">
         <p className="text-xs text-[var(--color-ink-muted)]">
           {dueCount} {dueCount === 1 ? 'word' : 'words'} due
         </p>
@@ -104,7 +117,7 @@ export default function ReviewMode({
       </div>
 
       {!revealed ? (
-        <div className="min-h-[280px] rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] px-6 py-10 text-center shadow-sm sm:min-h-[320px] sm:py-14">
+        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] px-6 py-10 text-center shadow-sm sm:py-14">
           <h2 className="text-4xl font-bold capitalize text-[var(--color-primary)] sm:text-5xl">
             {current.word}
           </h2>

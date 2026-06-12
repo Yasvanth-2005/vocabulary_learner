@@ -5,15 +5,6 @@ import { api } from '../api/client';
 import { showToast } from '../store/slices/uiSlice';
 import { formatNextReviewLabel } from '../utils/review';
 import { WordListSkeleton } from './Skeleton';
-import {
-  WORD_CARD_SHELL,
-  WORD_DEFINITION_CLASS,
-  WORD_FOOTER_CLASS,
-  WORD_GRID_CLASS,
-  WORD_META_CLASS,
-  WORD_SKIP_CLASS,
-  WORD_TITLE_CLASS,
-} from './wordCardLayout';
 
 const SORT_OPTIONS = [
   { id: 'newest', label: 'Recent first' },
@@ -74,31 +65,34 @@ function WordCard({ word, devMode, onSkip, onError }) {
     }
   }
 
-  const meta = [word.phonetic, word.partOfSpeech?.replace(/_/g, ' ')]
-    .filter(Boolean)
-    .join(' · ');
-
   return (
-    <li className={WORD_CARD_SHELL}>
-      <h3 className={`${WORD_TITLE_CLASS} line-clamp-1`}>{word.word}</h3>
-      <p className={WORD_META_CLASS}>{meta || '\u00A0'}</p>
-      <p className={WORD_DEFINITION_CLASS}>{word.definition}</p>
-      <div
-        className={`${WORD_FOOTER_CLASS} ${
-          review.isDue ? 'text-[var(--color-primary)]' : 'text-[var(--color-ink-muted)]'
-        }`}
-      >
+    <li className="flex h-full flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 shadow-sm">
+      <h3 className="text-xl font-bold capitalize text-[var(--color-ink)]">{word.word}</h3>
+      {(word.phonetic || word.partOfSpeech) && (
+        <p className="mt-0.5 font-mono text-sm text-[var(--color-ink-muted)]">
+          {word.phonetic}
+          {word.phonetic && word.partOfSpeech && ' · '}
+          {word.partOfSpeech && word.partOfSpeech.replace(/_/g, ' ')}
+        </p>
+      )}
+
+      <p className="mt-3 line-clamp-3 flex-1 text-sm leading-relaxed text-[var(--color-ink-muted)]">
+        {word.definition}
+      </p>
+
+      <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-[var(--color-primary)]">
         <CalendarIcon />
-        <span className="line-clamp-1">{review.long}</span>
+        <span>{review.long}</span>
       </div>
-      {devMode ? (
-        <button type="button" onClick={handleSkip} className={WORD_SKIP_CLASS}>
+
+      {devMode && (
+        <button
+          type="button"
+          onClick={handleSkip}
+          className="mt-3 text-left text-xs font-medium text-[var(--color-secondary)] hover:underline"
+        >
           Skip to review
         </button>
-      ) : (
-        <span className={`${WORD_SKIP_CLASS} invisible`} aria-hidden>
-          Skip to review
-        </span>
       )}
     </li>
   );
@@ -199,6 +193,7 @@ export default function WordList({ reloadKey = 0, onSkipReview }) {
   const [sortBy, setSortBy] = useState('newest');
   const [page, setPage] = useState(1);
   const [refreshCounter, setRefreshCounter] = useState(0);
+  const [loadError, setLoadError] = useState(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query), 300);
@@ -213,8 +208,8 @@ export default function WordList({ reloadKey = 0, onSkipReview }) {
     let cancelled = false;
 
     async function loadWords() {
-      if (cancelled) return;
       setLoading(true);
+      setLoadError(null);
       try {
         const data = await api.listWords(
           { page, limit: PAGE_SIZE, search: debouncedQuery, sort: sortBy },
@@ -223,9 +218,11 @@ export default function WordList({ reloadKey = 0, onSkipReview }) {
         if (!cancelled) {
           setWords(data.words);
           setPagination(data.pagination);
+          setLoadError(null);
         }
       } catch (err) {
         if (!cancelled) {
+          setLoadError(err.message);
           dispatch(showToast({ message: err.message, type: 'error' }));
         }
       } finally {
@@ -250,8 +247,8 @@ export default function WordList({ reloadKey = 0, onSkipReview }) {
     dispatch(showToast({ message, type: 'error' }));
   }
 
+  const isFirstLoad = loading && pagination === null;
   const isEmptyLibrary = !loading && pagination?.total === 0 && !debouncedQuery;
-  const showSkeleton = loading && words.length === 0;
 
   if (isEmptyLibrary) {
     return (
@@ -293,16 +290,28 @@ export default function WordList({ reloadKey = 0, onSkipReview }) {
         />
       )}
 
-      {showSkeleton ? (
-        <WordListSkeleton count={PAGE_SIZE} devMode={devMode} />
+      {isFirstLoad ? (
+        <WordListSkeleton count={6} />
+      ) : loadError && words.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-[var(--color-warn)]/40 bg-[var(--color-warn-soft)]/40 px-6 py-12 text-center">
+          <p className="text-lg font-semibold text-[var(--color-ink)]">Could not load your library</p>
+          <p className="mt-2 text-sm text-[var(--color-ink-muted)]">{loadError}</p>
+          <button
+            type="button"
+            onClick={() => setRefreshCounter((n) => n + 1)}
+            className="mt-4 rounded-full bg-[var(--color-primary)] px-5 py-2 text-sm font-semibold text-white hover:bg-[var(--color-primary-hover)]"
+          >
+            Try again
+          </button>
+        </div>
       ) : words.length === 0 ? (
         <p className="py-8 text-center text-sm text-[var(--color-ink-muted)]">
           No words match your search.
         </p>
       ) : (
         <ul
-          className={`${WORD_GRID_CLASS} transition-opacity duration-150 ${
-            loading ? 'pointer-events-none opacity-60' : 'opacity-100'
+          className={`grid grid-cols-1 gap-4 transition-opacity duration-150 sm:grid-cols-2 lg:grid-cols-3 ${
+            loading ? 'pointer-events-none opacity-60' : ''
           }`}
         >
           {words.map((w) => (
@@ -314,7 +323,7 @@ export default function WordList({ reloadKey = 0, onSkipReview }) {
               onError={handleError}
             />
           ))}
-          {words.length < PAGE_SIZE && <AddMoreCard />}
+          {!loading && words.length < PAGE_SIZE && <AddMoreCard />}
         </ul>
       )}
 

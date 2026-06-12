@@ -38,6 +38,7 @@ const reviewSlice = createSlice({
     dueCount: 0,
     loadingDue: true,
     isFetchingDue: false,
+    dueError: null,
     submitting: false,
   },
   reducers: {
@@ -52,16 +53,19 @@ const reviewSlice = createSlice({
       .addCase(fetchDueQueue.pending, (state) => {
         state.loadingDue = true;
         state.isFetchingDue = true;
+        state.dueError = null;
       })
       .addCase(fetchDueQueue.fulfilled, (state, action) => {
         state.loadingDue = false;
         state.isFetchingDue = false;
+        state.dueError = null;
         state.dueCount = action.payload.count;
         state.dueWords = action.payload.words;
       })
-      .addCase(fetchDueQueue.rejected, (state) => {
+      .addCase(fetchDueQueue.rejected, (state, action) => {
         state.loadingDue = false;
         state.isFetchingDue = false;
+        state.dueError = action.payload || 'Could not load review queue.';
       })
       .addCase(submitReview.pending, (state) => {
         state.submitting = true;
