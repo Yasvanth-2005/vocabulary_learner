@@ -5,6 +5,15 @@ import { api } from '../api/client';
 import { showToast } from '../store/slices/uiSlice';
 import { formatNextReviewLabel } from '../utils/review';
 import { WordListSkeleton } from './Skeleton';
+import {
+  WORD_CARD_SHELL,
+  WORD_DEFINITION_CLASS,
+  WORD_FOOTER_CLASS,
+  WORD_GRID_CLASS,
+  WORD_META_CLASS,
+  WORD_SKIP_CLASS,
+  WORD_TITLE_CLASS,
+} from './wordCardLayout';
 
 const SORT_OPTIONS = [
   { id: 'newest', label: 'Recent first' },
@@ -65,34 +74,31 @@ function WordCard({ word, devMode, onSkip, onError }) {
     }
   }
 
+  const meta = [word.phonetic, word.partOfSpeech?.replace(/_/g, ' ')]
+    .filter(Boolean)
+    .join(' · ');
+
   return (
-    <li className="flex h-full flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 shadow-sm">
-      <h3 className="text-xl font-bold capitalize text-[var(--color-ink)]">{word.word}</h3>
-      {(word.phonetic || word.partOfSpeech) && (
-        <p className="mt-0.5 font-mono text-sm text-[var(--color-ink-muted)]">
-          {word.phonetic}
-          {word.phonetic && word.partOfSpeech && ' · '}
-          {word.partOfSpeech && word.partOfSpeech.replace(/_/g, ' ')}
-        </p>
-      )}
-
-      <p className="mt-3 line-clamp-3 flex-1 text-sm leading-relaxed text-[var(--color-ink-muted)]">
-        {word.definition}
-      </p>
-
-      <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-[var(--color-primary)]">
+    <li className={WORD_CARD_SHELL}>
+      <h3 className={`${WORD_TITLE_CLASS} line-clamp-1`}>{word.word}</h3>
+      <p className={WORD_META_CLASS}>{meta || '\u00A0'}</p>
+      <p className={WORD_DEFINITION_CLASS}>{word.definition}</p>
+      <div
+        className={`${WORD_FOOTER_CLASS} ${
+          review.isDue ? 'text-[var(--color-primary)]' : 'text-[var(--color-ink-muted)]'
+        }`}
+      >
         <CalendarIcon />
-        <span>{review.long}</span>
+        <span className="line-clamp-1">{review.long}</span>
       </div>
-
-      {devMode && (
-        <button
-          type="button"
-          onClick={handleSkip}
-          className="mt-3 text-left text-xs font-medium text-[var(--color-secondary)] hover:underline"
-        >
+      {devMode ? (
+        <button type="button" onClick={handleSkip} className={WORD_SKIP_CLASS}>
           Skip to review
         </button>
+      ) : (
+        <span className={`${WORD_SKIP_CLASS} invisible`} aria-hidden>
+          Skip to review
+        </span>
       )}
     </li>
   );
@@ -207,6 +213,7 @@ export default function WordList({ reloadKey = 0, onSkipReview }) {
     let cancelled = false;
 
     async function loadWords() {
+      if (cancelled) return;
       setLoading(true);
       try {
         const data = await api.listWords(
@@ -243,8 +250,8 @@ export default function WordList({ reloadKey = 0, onSkipReview }) {
     dispatch(showToast({ message, type: 'error' }));
   }
 
-  const isInitialLoad = loading && pagination === null;
   const isEmptyLibrary = !loading && pagination?.total === 0 && !debouncedQuery;
+  const showSkeleton = loading && words.length === 0;
 
   if (isEmptyLibrary) {
     return (
@@ -253,21 +260,6 @@ export default function WordList({ reloadKey = 0, onSkipReview }) {
         <p className="mt-2 text-sm text-[var(--color-ink-muted)]">
           Add your first vocabulary word above to get started.
         </p>
-      </div>
-    );
-  }
-
-  if (isInitialLoad) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-bold text-[var(--color-ink)]">Your Library</h2>
-          <div className="flex items-center gap-2 opacity-40">
-            <SortIcon />
-            <SearchIcon />
-          </div>
-        </div>
-        <WordListSkeleton count={6} />
       </div>
     );
   }
@@ -301,14 +293,18 @@ export default function WordList({ reloadKey = 0, onSkipReview }) {
         />
       )}
 
-      {loading ? (
-        <WordListSkeleton count={6} />
+      {showSkeleton ? (
+        <WordListSkeleton count={PAGE_SIZE} devMode={devMode} />
       ) : words.length === 0 ? (
         <p className="py-8 text-center text-sm text-[var(--color-ink-muted)]">
           No words match your search.
         </p>
       ) : (
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul
+          className={`${WORD_GRID_CLASS} transition-opacity duration-150 ${
+            loading ? 'pointer-events-none opacity-60' : 'opacity-100'
+          }`}
+        >
           {words.map((w) => (
             <WordCard
               key={w._id}
