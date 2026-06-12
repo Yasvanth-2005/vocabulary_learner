@@ -61,7 +61,22 @@ VITE_API_BASE_URL=http://localhost:5000/api
 
 1. **Library** — Type a word and click **Add word**. The backend fetches the definition from [dictionaryapi.dev](https://dictionaryapi.dev/) and saves it to MongoDB.
 2. **Review** — Open the Review tab to practice words due today. Reveal the definition, then mark **Got it right** or **Needs work**.
-3. **Dev Mode** — Toggle Dev Mode to test the full review lifecycle in minutes instead of days (see below).
+
+## Dev Mode (for reviewers)
+
+Dev Mode is **off by default**. Normal users get real spaced-repetition intervals (1 day / 3 days).
+
+To test the full review lifecycle in a few minutes:
+
+1. Click the **Dev Mode: Off** button in the **top-right corner of the header** (next to the Vocab Builder title).
+2. In the modal that opens, flip the **Dev Mode** toggle to **on**. The header button updates to **Dev Mode: On**.
+3. With Dev Mode on:
+   - Review intervals are compressed to **1 minute** (needs work) and **3 minutes** (got it right) instead of days.
+   - **Advance 1 day** / **Advance 3 days** buttons appear in the modal to pull future reviews into the queue immediately.
+   - Each word in the **Library** tab shows a **Skip to Review** button to make that word due right away.
+4. Suggested 5-minute test flow: add a word → open **Review** → reveal → mark an outcome → use **Advance time** or wait for the compressed interval → confirm the word returns to the queue.
+
+Turn Dev Mode off again from the same header button and toggle when you are done testing.
 
 ## API Endpoints
 
@@ -121,15 +136,15 @@ Each `Word` document stores:
 - `lastReviewedAt`, `reviewCount` — review history metadata
 - `userId` — hardcoded to `test-user` (no auth)
 
-### Dev Test Mode
+### Dev Test Mode (implementation)
 
 Dev Mode uses a **dual-interval strategy** so reviewers can complete a full word lifecycle in ~5 minutes:
 
-1. **Compressed intervals** — When `X-Dev-Mode: true` is sent, scheduling maps **1 day → 1 minute** and **3 days → 3 minutes** instead of calendar days.
-2. **Advance Time** — Buttons to subtract 1 or 3 days from every word's `nextReviewAt`, instantly surfacing words that would otherwise be waiting.
+1. **Compressed intervals** — When Dev Mode is on, the frontend sends `X-Dev-Mode: true` on API requests. The backend maps **1 day → 1 minute** and **3 days → 3 minutes**.
+2. **Advance Time** — Available in the header dev settings modal when Dev Mode is on. Subtracts 1 or 3 days from every word's `nextReviewAt`.
 3. **Skip to Review** — Per-word button in the Library tab (Dev Mode only) that sets `nextReviewAt` to now.
 
-This combination lets you: add a word → review it → mark "Got it right" → wait 3 minutes (or advance time) → see it return to the queue.
+See [Dev Mode (for reviewers)](#dev-mode-for-reviewers) above for step-by-step UI instructions.
 
 ## Tech Stack
 

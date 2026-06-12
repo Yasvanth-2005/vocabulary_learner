@@ -20,10 +20,16 @@ export function formatNextReviewLabel(nextReviewAt, devMode) {
   }
 
   const days = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
-  const label = days === 1 ? '1d' : `${days}d`;
+  let short;
+  if (days === 1) short = 'In 1 day';
+  else if (days < 7) short = `In ${days} days`;
+  else if (days < 14) short = 'In 1 week';
+  else if (days < 30) short = `In ${Math.round(days / 7)} weeks`;
+  else short = `In ${Math.round(days / 30)} months`;
+
   return {
-    short: label,
-    long: `Next Review: ${label}`,
+    short,
+    long: short,
     isDue: false,
   };
 }

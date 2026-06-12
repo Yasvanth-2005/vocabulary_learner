@@ -4,10 +4,10 @@ function Bone({ className = '' }) {
 
 export function WordCardSkeleton() {
   return (
-    <li className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 shadow-sm">
+    <li className="flex h-full flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 shadow-sm">
       <Bone className="h-6 w-36" />
       <Bone className="mt-2 h-4 w-52" />
-      <div className="mt-3 space-y-2">
+      <div className="mt-3 flex-1 space-y-2">
         <Bone className="h-3.5 w-full" />
         <Bone className="h-3.5 w-[80%]" />
       </div>
@@ -16,9 +16,13 @@ export function WordCardSkeleton() {
   );
 }
 
-export function WordListSkeleton({ count = 3 }) {
+export function WordListSkeleton({ count = 6 }) {
   return (
-    <ul className="space-y-3" aria-label="Loading words" aria-busy="true">
+    <ul
+      className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      aria-label="Loading words"
+      aria-busy="true"
+    >
       {Array.from({ length: count }, (_, i) => (
         <WordCardSkeleton key={i} />
       ))}

@@ -30,18 +30,6 @@ const wordSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
-    level: {
-      type: Number,
-      default: 1,
-      min: 1,
-      max: 5,
-    },
-    masteryProgress: {
-      type: Number,
-      default: 0,
-      min: 0,
-      max: 100,
-    },
     nextReviewAt: {
       type: Date,
       required: true,

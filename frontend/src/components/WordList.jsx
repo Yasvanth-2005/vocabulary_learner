@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { useDevMode } from '../context/DevModeContext';
 import { api } from '../api/client';
+import { showToast } from '../store/slices/uiSlice';
 import { formatNextReviewLabel } from '../utils/review';
 import { WordListSkeleton } from './Skeleton';
 
@@ -11,7 +13,7 @@ const SORT_OPTIONS = [
   { id: 'za', label: 'Alphabetical (Z–A)' },
 ];
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 12;
 
 function SortIcon() {
   return (
@@ -39,20 +41,32 @@ function CalendarIcon() {
   );
 }
 
-function WordCard({ word, devMode, onSkipReview, onRefresh }) {
+function SparkleIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M12 2l1.2 4.2L17.5 8 13.2 9.2 12 13.5 10.8 9.2 6.5 8l4.3-1.8L12 2zM5 14l.8 2.8L8.5 18l-2.7 1.2L5 22l-.8-2.8L1.5 18l2.7-1.2L5 14zM19 14l.8 2.8L22.5 18l-2.7 1.2L19 22l-.8-2.8L15.5 18l2.7-1.2L19 14z"
+        fill="currentColor"
+        opacity="0.35"
+      />
+    </svg>
+  );
+}
+
+function WordCard({ word, devMode, onSkip, onError }) {
   const review = formatNextReviewLabel(word.nextReviewAt, devMode);
 
   async function handleSkip() {
     try {
       await api.skipToReview(word._id, devMode);
-      onSkipReview?.();
+      onSkip?.();
     } catch (err) {
-      onRefresh?.(err.message, 'error');
+      onError(err.message);
     }
   }
 
   return (
-    <li className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 shadow-sm">
+    <li className="flex h-full flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-5 shadow-sm">
       <h3 className="text-xl font-bold capitalize text-[var(--color-ink)]">{word.word}</h3>
       {(word.phonetic || word.partOfSpeech) && (
         <p className="mt-0.5 font-mono text-sm text-[var(--color-ink-muted)]">
@@ -62,7 +76,9 @@ function WordCard({ word, devMode, onSkipReview, onRefresh }) {
         </p>
       )}
 
-      <p className="mt-3 text-sm leading-relaxed text-[var(--color-ink-muted)]">{word.definition}</p>
+      <p className="mt-3 line-clamp-3 flex-1 text-sm leading-relaxed text-[var(--color-ink-muted)]">
+        {word.definition}
+      </p>
 
       <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-[var(--color-primary)]">
         <CalendarIcon />
@@ -73,11 +89,31 @@ function WordCard({ word, devMode, onSkipReview, onRefresh }) {
         <button
           type="button"
           onClick={handleSkip}
-          className="mt-3 text-xs font-medium text-[var(--color-secondary)] hover:underline"
+          className="mt-3 text-left text-xs font-medium text-[var(--color-secondary)] hover:underline"
         >
           Skip to review
         </button>
       )}
+    </li>
+  );
+}
+
+function AddMoreCard() {
+  function scrollToAddWord() {
+    document.getElementById('add-word')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.querySelector('#add-word input')?.focus();
+  }
+
+  return (
+    <li
+      className="flex h-full min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-card)]/60 p-5 text-center transition hover:border-[var(--color-secondary)] hover:bg-[var(--color-tertiary)]/40"
+      onClick={scrollToAddWord}
+      onKeyDown={(e) => e.key === 'Enter' && scrollToAddWord()}
+      role="button"
+      tabIndex={0}
+    >
+      <SparkleIcon />
+      <p className="mt-3 text-sm text-[var(--color-ink-muted)]">Add more words to grow your library</p>
     </li>
   );
 }
@@ -145,7 +181,8 @@ function SortMenu({ sortBy, onChange }) {
   );
 }
 
-export default function WordList({ reloadKey = 0, onSkipReview, onRefresh }) {
+export default function WordList({ reloadKey = 0, onSkipReview }) {
+  const dispatch = useDispatch();
   const { devMode } = useDevMode();
   const [words, setWords] = useState([]);
   const [pagination, setPagination] = useState(null);
@@ -155,6 +192,7 @@ export default function WordList({ reloadKey = 0, onSkipReview, onRefresh }) {
   const [showSearch, setShowSearch] = useState(false);
   const [sortBy, setSortBy] = useState('newest');
   const [page, setPage] = useState(1);
+  const [refreshCounter, setRefreshCounter] = useState(0);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query), 300);
@@ -165,25 +203,45 @@ export default function WordList({ reloadKey = 0, onSkipReview, onRefresh }) {
     setPage(1);
   }, [debouncedQuery, sortBy]);
 
-  const fetchWords = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await api.listWords(
-        { page, limit: PAGE_SIZE, search: debouncedQuery, sort: sortBy },
-        devMode
-      );
-      setWords(data.words);
-      setPagination(data.pagination);
-    } catch (err) {
-      onRefresh?.(err.message, 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, [page, debouncedQuery, sortBy, devMode, onRefresh]);
-
   useEffect(() => {
-    fetchWords();
-  }, [fetchWords, reloadKey]);
+    let cancelled = false;
+
+    async function loadWords() {
+      setLoading(true);
+      try {
+        const data = await api.listWords(
+          { page, limit: PAGE_SIZE, search: debouncedQuery, sort: sortBy },
+          devMode
+        );
+        if (!cancelled) {
+          setWords(data.words);
+          setPagination(data.pagination);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          dispatch(showToast({ message: err.message, type: 'error' }));
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadWords();
+    return () => {
+      cancelled = true;
+    };
+  }, [page, debouncedQuery, sortBy, devMode, reloadKey, refreshCounter, dispatch]);
+
+  function handleSkipReview() {
+    onSkipReview?.();
+    setRefreshCounter((n) => n + 1);
+  }
+
+  function handleError(message) {
+    dispatch(showToast({ message, type: 'error' }));
+  }
 
   const isInitialLoad = loading && pagination === null;
   const isEmptyLibrary = !loading && pagination?.total === 0 && !debouncedQuery;
@@ -209,7 +267,7 @@ export default function WordList({ reloadKey = 0, onSkipReview, onRefresh }) {
             <SearchIcon />
           </div>
         </div>
-        <WordListSkeleton count={3} />
+        <WordListSkeleton count={6} />
       </div>
     );
   }
@@ -244,25 +302,23 @@ export default function WordList({ reloadKey = 0, onSkipReview, onRefresh }) {
       )}
 
       {loading ? (
-        <WordListSkeleton count={2} />
+        <WordListSkeleton count={6} />
       ) : words.length === 0 ? (
         <p className="py-8 text-center text-sm text-[var(--color-ink-muted)]">
           No words match your search.
         </p>
       ) : (
-        <ul className="space-y-3">
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {words.map((w) => (
             <WordCard
               key={w._id}
               word={w}
               devMode={devMode}
-              onSkipReview={() => {
-                onSkipReview?.();
-                fetchWords();
-              }}
-              onRefresh={onRefresh}
+              onSkip={handleSkipReview}
+              onError={handleError}
             />
           ))}
+          {words.length < PAGE_SIZE && <AddMoreCard />}
         </ul>
       )}
 

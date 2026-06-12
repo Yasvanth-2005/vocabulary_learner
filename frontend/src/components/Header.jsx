@@ -10,7 +10,7 @@ export default function Header({ onTimeAdvanced }) {
   return (
     <>
       <header className="border-b border-[var(--color-border)] bg-[var(--color-neutral)]">
-        <div className="mx-auto flex max-w-2xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-8">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-primary)] text-white">
               <TerminalIcon />
@@ -23,9 +23,9 @@ export default function Header({ onTimeAdvanced }) {
           <button
             type="button"
             onClick={() => setModalOpen(true)}
-            className={`flex items-center gap-2 rounded-full px-3 py-1.5 font-mono text-[11px] font-semibold tracking-wide uppercase transition ${
+            className={`flex cursor-pointer items-center gap-2 rounded-full px-3 py-1.5 font-mono text-[11px] font-semibold tracking-wide uppercase transition ${
               devMode
-                ? 'bg-[var(--color-primary)] text-[var(--color-tertiary)]'
+                ? 'bg-[var(--color-primary)] text-[var(--color-tertiary)] hover:opacity-90'
                 : 'border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-ink-muted)] hover:border-[var(--color-secondary)]'
             }`}
             aria-label="Open dev mode settings"

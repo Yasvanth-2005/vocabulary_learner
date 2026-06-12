@@ -108,21 +108,6 @@ class WordService {
     const now = new Date();
     word.lastReviewedAt = now;
     word.reviewCount += 1;
-
-    if (outcome === 'got_it_right') {
-      word.masteryProgress = Math.min(100, word.masteryProgress + 25);
-      if (word.masteryProgress >= 100 && word.level < 5) {
-        word.level += 1;
-        word.masteryProgress = 0;
-      }
-    } else {
-      word.masteryProgress = Math.max(0, word.masteryProgress - 30);
-      if (word.masteryProgress === 0 && word.level > 1) {
-        word.level -= 1;
-        word.masteryProgress = 50;
-      }
-    }
-
     word.nextReviewAt = this.spacedRepetitionService.computeNextReviewAt(
       outcome,
       devMode,
